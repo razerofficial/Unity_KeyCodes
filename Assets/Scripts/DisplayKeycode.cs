@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -307,6 +309,12 @@ public class DisplayKeycode : MonoBehaviour
     public static extern System.IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll")]
+    static extern System.IntPtr GetActiveWindow();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr FindWindow(string className, string windowName);
+
+    [DllImport("user32.dll")]
     static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
     [DllImport("user32.dll")]
@@ -317,11 +325,36 @@ public class DisplayKeycode : MonoBehaviour
 
     private string _mLastWndProcString = string.Empty;
 
-    void Start()
-    {
-        if (isrunning) return;
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
-        hMainWindow = GetForegroundWindow();
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    static extern int GetWindowTextLength(IntPtr hWnd);
+
+    IEnumerator Start()
+    {
+        if (isrunning) yield break;
+
+        while (true)
+        {
+            //hMainWindow = GetForegroundWindow();
+            hMainWindow = GetActiveWindow();
+            yield return new WaitForSeconds(1);
+            if (hMainWindow == IntPtr.Zero)
+            {
+                Debug.LogError("Main window is null!");
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        var length = GetWindowTextLength(hMainWindow);
+        var title = new StringBuilder(length);
+        GetWindowText(hMainWindow, title, length);
+        Debug.LogFormat("Main window title: {0}", title.ToString());
+
         newWndProc = new WndProcDelegate(wndProc);
         newWndProcPtr = Marshal.GetFunctionPointerForDelegate(newWndProc);
         oldWndProcPtr = SetWindowLong(hMainWindow, -4, newWndProcPtr);
