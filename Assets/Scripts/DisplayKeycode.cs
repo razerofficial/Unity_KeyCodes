@@ -271,6 +271,7 @@ public class DisplayKeycode : MonoBehaviour
             _sKeyMapping[KeyCode.RightControl] = (int)Keyboard.RZKEY.RZKEY_RCTRL;
             _sKeyMapping[KeyCode.LeftControl] = (int)Keyboard.RZKEY.RZKEY_LCTRL;
             _sKeyMapping[KeyCode.RightAlt] = (int)Keyboard.RZKEY.RZKEY_RALT;
+            _sKeyMapping[KeyCode.AltGr] = (int)Keyboard.RZKEY.RZKEY_RALT;
             _sKeyMapping[KeyCode.LeftAlt] = (int)Keyboard.RZKEY.RZKEY_LALT;
             _sKeyMapping[KeyCode.LeftWindows] = (int)Keyboard.RZKEY.RZKEY_LWIN;
             _sKeyMapping[KeyCode.Print] = (int)Keyboard.RZKEY.RZKEY_PRINTSCREEN;
