@@ -339,10 +339,10 @@ public class DisplayKeycode : MonoBehaviour
         {
             //hMainWindow = GetForegroundWindow();
             hMainWindow = GetActiveWindow();
-            yield return new WaitForSeconds(1);
             if (hMainWindow == IntPtr.Zero)
             {
                 Debug.LogError("Main window is null!");
+                yield return new WaitForSeconds(1);
             }
             else
             {
