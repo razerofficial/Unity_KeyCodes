@@ -1,12 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
+
+public delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
 public class DisplayKeycode : MonoBehaviour
 {
     public Text _mTextLabel = null;
     public Text _mTextKeyCode = null;
     public Text _mTextRazerKeyCode = null;
+    public Text _mTextWndProc = null;
 
     private KeyCode _mLastKey = KeyCode.None;
 
@@ -283,6 +288,82 @@ public class DisplayKeycode : MonoBehaviour
         }
     }
 
+
+    #endregion
+
+    #region WndProc Handling
+
+    // Ref: https://forum.unity.com/threads/recieve-window_commands-in-unity.213741/
+
+    public IntPtr interactionWindow;
+    IntPtr hMainWindow;
+    IntPtr oldWndProcPtr;
+    IntPtr newWndProcPtr;
+    WndProcDelegate newWndProc;
+    bool isrunning = false;
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+    public static extern System.IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    [DllImport("user32.dll")]
+    static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+    const int WM_KEYDOWN = 0x0100;
+    const int WM_KEYUP = 0x0101;
+
+    private string _mLastWndProcString = string.Empty;
+
+    void Start()
+    {
+        if (isrunning) return;
+
+        hMainWindow = GetForegroundWindow();
+        newWndProc = new WndProcDelegate(wndProc);
+        newWndProcPtr = Marshal.GetFunctionPointerForDelegate(newWndProc);
+        oldWndProcPtr = SetWindowLong(hMainWindow, -4, newWndProcPtr);
+        isrunning = true;
+    }
+
+    private static IntPtr StructToPtr(object obj)
+    {
+        var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(obj));
+        Marshal.StructureToPtr(obj, ptr, false);
+        return ptr;
+    }
+    IntPtr wndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+    {
+        switch (msg)
+        {
+            case WM_KEYDOWN:
+                if (_mTextWndProc)
+                {
+                    _mTextWndProc.text = string.Format("WM_KEYDOWN: {0}", wParam.ToInt32());
+                }
+                break;
+            case WM_KEYUP:
+                if (_mTextWndProc)
+                {
+                    _mTextWndProc.text = string.Format("WM_KEYUP: {0}", wParam.ToInt32());
+                }
+                break;
+        }
+        return CallWindowProc(oldWndProcPtr, hWnd, msg, wParam, lParam);
+    }
+
+    void OnDisable()
+    {
+        Debug.Log("Uninstall Hook");
+        if (!isrunning) return;
+        SetWindowLong(hMainWindow, -4, oldWndProcPtr);
+        hMainWindow = IntPtr.Zero;
+        oldWndProcPtr = IntPtr.Zero;
+        newWndProcPtr = IntPtr.Zero;
+        newWndProc = null;
+        isrunning = false;
+    }
 
     #endregion
 
